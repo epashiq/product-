@@ -14,8 +14,9 @@ class IProductImpl implements IProductFacade {
   bool noMoreData = false;
 
   @override
-  Future<Either<MainFailure, ProductModel>> addProducts(
-      {required ProductModel productModel,}) async {
+  Future<Either<MainFailure, ProductModel>> addProducts({
+    required ProductModel productModel,
+  }) async {
     try {
       final productRef = firestore.collection('product');
       final id = productRef.doc().id;
@@ -53,6 +54,22 @@ class IProductImpl implements IProductFacade {
           .toList();
 
       return right(newList);
+    } catch (e) {
+      return left(MainFailure.serverFailure(errorMessage: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<MainFailure, ProductModel>> updateStock(
+      {required String productId, required int newStock}) async {
+    try {
+      final productRef = firestore.collection('products').doc(productId);
+
+      await productRef.update({'stock': newStock});
+      final updatedDoc = await productRef.get();
+      final updateProduct =
+          ProductModel.fromMap(updatedDoc.data() as Map<String, dynamic>);
+      return right(updateProduct);
     } catch (e) {
       return left(MainFailure.serverFailure(errorMessage: e.toString()));
     }

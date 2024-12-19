@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:product_details/features/product/presentation/provider/product_provider.dart';
+import 'package:product_details/features/review/presentation/view/review_page.dart';
 import 'package:provider/provider.dart';
 
 class ProductPage extends StatefulWidget {
@@ -11,6 +12,7 @@ class ProductPage extends StatefulWidget {
 }
 
 class _ProductPageState extends State<ProductPage> {
+  final scrollController = ScrollController();
   @override
   void initState() {
     super.initState();
@@ -18,6 +20,15 @@ class _ProductPageState extends State<ProductPage> {
         Provider.of<ProductProvider>(context, listen: false);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       productProvider.fetchProducts();
+    });
+
+    scrollController.addListener(() {
+      if (scrollController.position.pixels ==
+          scrollController.position.maxScrollExtent) {
+        if (!productProvider.isLoading && !productProvider.noMoreData) {
+          productProvider.fetchProducts();
+        }
+      }
     });
   }
 
@@ -34,28 +45,45 @@ class _ProductPageState extends State<ProductPage> {
             return const Text('No product available');
           } else {
             return GridView.builder(
+              controller: scrollController,
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  childAspectRatio: 0.75,
+                  childAspectRatio: 1,
                   crossAxisSpacing: 10,
                   mainAxisSpacing: 10),
               itemCount: proProvider.productList.length,
               itemBuilder: (context, index) {
                 final pro = proProvider.productList[index];
-                return Card(
-                  child: Column(
-                    children: [
-                      Text(pro.product,
-                          style: const TextStyle(fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 5),
-                      Text("₹${pro.prize}"),
-                      const SizedBox(height: 5),
-                      Text(
-                        pro.descreption,
+                return InkWell(
+                  onTap: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ReviewPage(
+                            productId: pro.id!,
+                          ),
+                        ));
+                  },
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Product : ${pro.product}',
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 5),
+                          Text("Prize : ₹${pro.prize}"),
+                          const SizedBox(height: 5),
+                          Text(
+                            pro.descreption,
+                          ),
+                          Text("Stock: ${pro.stock}"),
+                          Text('Colour : ${pro.details.colour}'),
+                        ],
                       ),
-                      Text("Stock: ${pro.stock}"),
-                      Text(pro.details.colour),
-                    ],
+                    ),
                   ),
                 );
               },
@@ -117,7 +145,6 @@ class _ProductPageState extends State<ProductPage> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    // Add other necessary fields, like color and material
                     TextField(
                       controller: productProvider.colourController,
                       decoration: InputDecoration(
@@ -148,7 +175,6 @@ class _ProductPageState extends State<ProductPage> {
                   ),
                   ElevatedButton(
                     onPressed: () async {
-                      // Ensure you pass all required values to addProducts
                       await productProvider.addProducts(
                         colour: productProvider.colourController.text,
                         material: productProvider.materialController.text,

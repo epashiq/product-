@@ -19,6 +19,7 @@ class ProductProvider with ChangeNotifier {
 
   List<ProductModel> productList = [];
   bool isLoading = false;
+  bool noMoreData = false;
 
   Future<void> addProducts(
       {required String colour, required String material}) async {
@@ -42,11 +43,13 @@ class ProductProvider with ChangeNotifier {
       },
       (success) {
         log('Add product succesfully');
+        addLocally(success);
       },
     );
   }
 
   Future<void> fetchProducts() async {
+    if(isLoading||noMoreData) return;
     isLoading = true;
     notifyListeners();
 
@@ -62,6 +65,11 @@ class ProductProvider with ChangeNotifier {
       },
     );
     isLoading = false;
+    notifyListeners();
+  }
+
+  void addLocally(ProductModel productModel) {
+    productList.insert(0, productModel);
     notifyListeners();
   }
 }
